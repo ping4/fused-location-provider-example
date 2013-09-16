@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <property name="LOG_DIR" value="/sdcard" />
+  <!-- Create a file appender for a log in the application's data directory -->
+  <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <file>${LOG_DIR}/fusedLocationInfo.log</file>
+    <encoder>
+      <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>  
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>fusedLocationInfo.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- keep 7 days' worth of history -->
+      <maxHistory>7</maxHistory>
+    </rollingPolicy>
+  </appender>
+    <appender name="LOGCAT" class="ch.qos.logback.classic.android.LogcatAppender" >
+        <tagEncoder>
+            <pattern>%logger{0}</pattern>
+        </tagEncoder>
+        <encoder>
+            <pattern>[%method] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+  <!-- Write INFO (and higher-level) messages to the log file -->
+  <root level="DEBUG">
+      <appender-ref ref="file" />
+      <appender-ref ref="LOGCAT" />
+  </root>
+</configuration>

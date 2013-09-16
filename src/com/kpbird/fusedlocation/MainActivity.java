@@ -15,7 +15,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import org.apache.http.message.BasicNameValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -24,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class MainActivity extends Activity implements GooglePlayServicesClient.ConnectionCallbacks,GooglePlayServicesClient.OnConnectionFailedListener,LocationListener {
+
+  private static final Logger              log              = LoggerFactory.getLogger(MainActivity.class);
 
 	private String TAG = MainActivity.class.getSimpleName();
 	
@@ -35,16 +38,43 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
   private ListView locationHistory;
 
   ArrayAdapter<String> arrayAdapter;
-  ArrayList<BasicNameValuePair> locations = new ArrayList<BasicNameValuePair>();
+  ArrayList<locationInfo> locations = new ArrayList<locationInfo>();
 
 	private LocationClient locationclient;
 	private LocationRequest locationrequest;
 	private Intent mIntentService;
 
-	@Override
+  @Override
+  protected void onResume() {
+    super.onResume();
+  }
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putParcelableArrayList("locations",locations);
+  }
+
+  @Override
+  protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    super.onRestoreInstanceState(savedInstanceState);
+    locations = savedInstanceState.getParcelableArrayList("locations");
+    arrayAdapter.notifyDataSetChanged();
+  }
+
+  @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+    if( savedInstanceState != null ){
+      locations = savedInstanceState.getParcelableArrayList("locations");
+    }
 		txtConnectionStatus = (TextView) findViewById(R.id.txtConnectionStatus);
 		txtLastKnownLoc = (TextView) findViewById(R.id.txtLastKnownLoc);
 		etLocationInterval = (EditText) findViewById(R.id.etLocationInterval);
@@ -62,9 +92,9 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
         TextView text1 = (TextView) view.findViewById(android.R.id.text1);
         TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
-        BasicNameValuePair data = locations.get(position);
-        text1.setText(data.getName());
-        text2.setText(data.getValue());
+        locationInfo data = locations.get(position);
+        text1.setText(data.getCoordinates());
+        text2.setText(data.getDate());
 
         return view;
 
@@ -170,8 +200,16 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 
       Double curLat = Double.parseDouble(df.format(location.getLatitude()));
       Double curLng = Double.parseDouble(df.format(location.getLongitude()));
-      locations.add(new BasicNameValuePair(curLat + "," + curLng, subtitle.toString()));
+      locations.add(new locationInfo(curLat + "," + curLng, subtitle.toString()));
       arrayAdapter.notifyDataSetChanged();
+
+      StringBuffer whatToLog = new StringBuffer();
+      whatToLog.append(sdf.format(location.getTime()) + ",");
+      whatToLog.append(location.getProvider() + ",");
+      whatToLog.append(locInfo);
+      // logFile.logToFile(whatToLog.toString());
+      log.info(whatToLog.toString());
+
     }
   }
 }
