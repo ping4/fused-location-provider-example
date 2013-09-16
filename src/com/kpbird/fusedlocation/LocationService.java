@@ -23,7 +23,6 @@ public class LocationService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-			
 			Location location = intent.getParcelableExtra(LocationClient.KEY_LOCATION_CHANGED);
 			if(location !=null){
 				Log.i(TAG, "onHandleIntent " + location.getLatitude() + "," + location.getLongitude());

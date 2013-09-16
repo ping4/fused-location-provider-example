@@ -1,38 +1,46 @@
 package com.kpbird.fusedlocation;
 
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.view.ViewGroup;
+import android.widget.*;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import org.apache.http.message.BasicNameValuePair;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends Activity implements GooglePlayServicesClient.ConnectionCallbacks,GooglePlayServicesClient.OnConnectionFailedListener,LocationListener {
 
-	private String TAG = this.getClass().getSimpleName();
+	private String TAG = MainActivity.class.getSimpleName();
 	
 	private TextView txtConnectionStatus;
 	private TextView txtLastKnownLoc;
 	private EditText etLocationInterval;
+  private EditText eDistance;
 	private TextView txtLocationRequest;
-	
+  private ListView locationHistory;
+
+  ArrayAdapter<String> arrayAdapter;
+  ArrayList<BasicNameValuePair> locations = new ArrayList<BasicNameValuePair>();
+
 	private LocationClient locationclient;
 	private LocationRequest locationrequest;
 	private Intent mIntentService;
-	private PendingIntent mPendingIntent;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -40,11 +48,30 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 		txtConnectionStatus = (TextView) findViewById(R.id.txtConnectionStatus);
 		txtLastKnownLoc = (TextView) findViewById(R.id.txtLastKnownLoc);
 		etLocationInterval = (EditText) findViewById(R.id.etLocationInterval);
+    eDistance = (EditText)findViewById(R.id.eDistance);
 		txtLocationRequest = (TextView) findViewById(R.id.txtLocationRequest);
 		
 		mIntentService = new Intent(this,LocationService.class);
-		mPendingIntent = PendingIntent.getService(this, 1, mIntentService, 0);
-		
+
+    locationHistory = (ListView)findViewById(R.id.locationHistory);
+    arrayAdapter = new ArrayAdapter (this, android.R.layout.simple_list_item_2, android.R.id.text1, locations) {
+
+      @Override
+      public View getView( int position, View convertView, ViewGroup parent){
+        View view = super.getView(position, convertView, parent);
+        TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+        TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+
+        BasicNameValuePair data = locations.get(position);
+        text1.setText(data.getName());
+        text2.setText(data.getValue());
+
+        return view;
+
+      }
+    };
+    locationHistory.setAdapter(arrayAdapter);
+
 		int resp =GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
 		if(resp == ConnectionResult.SUCCESS){
 			locationclient = new LocationClient(this,this,this);
@@ -52,17 +79,20 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 		}
 		else{
 			Toast.makeText(this, "Google Play Service Error " + resp, Toast.LENGTH_LONG).show();
-			
 		}
-		
 	}
 	
 	public void buttonClicked(View v){
 		if(v.getId() == R.id.btnLastLoc){
 			if(locationclient!=null && locationclient.isConnected()){
 				Location loc =locationclient.getLastLocation();
-				Log.i(TAG, "Last Known Location :" + loc.getLatitude() + "," + loc.getLongitude());
-				txtLastKnownLoc.setText(loc.getLatitude() + "," + loc.getLongitude());	
+        if( loc != null ){
+          Log.i(TAG, "Last Known Location :" + loc.getLatitude() + "," + loc.getLongitude());
+          txtLastKnownLoc.setText(loc.getLatitude() + "," + loc.getLongitude());
+        } else {
+          // Maybe location is not enabled?
+          startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+        }
 			}
 		}
 		if(v.getId() == R.id.btnStartRequest){
@@ -70,7 +100,10 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 				
 				if(((Button)v).getText().equals("Start")){
 					locationrequest = LocationRequest.create();
+          locationrequest.setFastestInterval(5 * 1000);
+          locationrequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 					locationrequest.setInterval(Long.parseLong(etLocationInterval.getText().toString()));
+          locationrequest.setSmallestDisplacement(Float.valueOf(eDistance.getText().toString()));
 					locationclient.requestLocationUpdates(locationrequest, this);
 					((Button) v).setText("Stop");	
 				}
@@ -81,27 +114,7 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 				
 			}
 		}
-		if(v.getId() == R.id.btnRequestLocationIntent){
-			if(((Button)v).getText().equals("Start")){
-				
-				locationrequest = LocationRequest.create();
-				locationrequest.setInterval(100);
-				locationclient.requestLocationUpdates(locationrequest, mPendingIntent);
-				
-				((Button) v).setText("Stop");
-			}
-			else{
-				locationclient.removeLocationUpdates(mPendingIntent);
-				((Button) v).setText("Start");
-			}
-			
-			
-			
-			
-			
-		}
 	}
-	
 	
 	@Override
 	protected void onDestroy() {
@@ -135,11 +148,30 @@ public class MainActivity extends Activity implements GooglePlayServicesClient.C
 	public void onLocationChanged(Location location) {
 		if(location!=null){
 			Log.i(TAG, "Location Request :" + location.getLatitude() + "," + location.getLongitude());
-			txtLocationRequest.setText(location.getLatitude() + "," + location.getLongitude());
+      String locationUpdate = location.getLatitude() + "," + location.getLongitude();
+			txtLocationRequest.setText(locationUpdate);
+
+      logLocationUpdate(location);
 		}
-		
 	}
 
-	
+  public void logLocationUpdate(Location location) {
+    String locInfo = location.toString();
+    locInfo = locInfo.replaceFirst("^Location\\[", "");
+    int sL = locInfo.length();
+    if (sL > 1) {
+      locInfo = locInfo.substring(0, sL - 1);
+      SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy hh:mm:ss a", Locale.US);
+      StringBuffer subtitle = new StringBuffer();
+      String accuracy = Float.toString(location.getAccuracy());
+      subtitle.append( sdf.format(location.getTime()) );
+      subtitle.append( " " + accuracy + "m" );
+      DecimalFormat df = new DecimalFormat("##.######", new DecimalFormatSymbols(Locale.ENGLISH));
 
+      Double curLat = Double.parseDouble(df.format(location.getLatitude()));
+      Double curLng = Double.parseDouble(df.format(location.getLongitude()));
+      locations.add(new BasicNameValuePair(curLat + "," + curLng, subtitle.toString()));
+      arrayAdapter.notifyDataSetChanged();
+    }
+  }
 }

@@ -37,7 +37,7 @@
         android:layout_alignLeft="@+id/txtConnectionStatus"
         android:layout_alignRight="@+id/txtConnectionStatus"
         android:layout_below="@+id/txtConnectionStatus"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="5dp"
         android:onClick="buttonClicked"
         android:text="Fetch Last Location" />
 
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/textView1"
         android:layout_alignRight="@+id/txtLastKnownLoc"
-        android:layout_below="@+id/etLocationInterval"
+        android:layout_below="@+id/eDistance"
         android:onClick="buttonClicked"
         android:text="Start" />
 
@@ -62,46 +62,48 @@
         android:text="0.0,0.0"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <EditText
-        android:id="@+id/etLocationInterval"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/txtLastKnownLoc"
-        android:layout_alignTop="@+id/textView1"
-        android:ems="3"
-        android:inputType="number"
-        android:text="100" >
-    </EditText>
-
     <TextView
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/txtLastKnownLoc"
         android:layout_below="@+id/txtLastKnownLoc"
-        android:layout_marginTop="51dp"
+        android:layout_marginTop="10dp"
         android:text="Location Request Listener"
         android:textAppearance="?android:attr/textAppearanceMedium" />
-
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:textAppearance="?android:attr/textAppearanceMedium" android:text="Distance (meters)"
+              android:id="@+id/textView2" android:layout_marginTop="5dip"
+              android:layout_alignTop="@+id/eDistance" android:layout_alignBottom="@+id/eDistance"/>
+    <EditText android:id="@+id/eDistance" android:layout_width="wrap_content"
+              android:layout_height="wrap_content" android:layout_alignRight="@+id/txtLastKnownLoc" android:ems="5"
+              android:inputType="number" android:text="150" android:layout_below="@+id/etLocationInterval"/>
     <TextView
-        android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Interval (milisecond)"
+            android:id="@+id/textView"
+            android:layout_marginTop="5dip" android:layout_alignBottom="@+id/etLocationInterval"
+            android:layout_alignTop="@+id/etLocationInterval" android:singleLine="false"/>
+    <EditText
+        android:id="@+id/etLocationInterval"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/txtLocationRequest"
-        android:layout_alignRight="@+id/txtLocationRequest"
-        android:layout_below="@+id/txtLocationRequest"
-        android:layout_marginTop="50dp"
-        android:text="Request Location PendingIntent"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
-    <Button
-        android:id="@+id/btnRequestLocationIntent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView2"
-        android:layout_alignRight="@+id/textView2"
-        android:layout_below="@+id/textView2"
-        android:onClick="buttonClicked"
-        android:text="Start" />
+        android:layout_alignRight="@+id/txtLastKnownLoc"
+        android:ems="5"
+        android:inputType="number"
+        android:text="3000" android:layout_below="@+id/textView1">
+    </EditText>
+    <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:id="@+id/scrollView" android:layout_below="@+id/txtLocationRequest"
+            android:layout_alignRight="@+id/btnStartRequest" android:layout_alignLeft="@+id/btnStartRequest">
+        <ListView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/locationHistory"/>
+    </ScrollView>
 
 </RelativeLayout>
